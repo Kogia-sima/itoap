@@ -40,7 +40,7 @@ Give a ⭐️ if this project helped you!
 
 ## 📝 License
 
-Copyright © 2020 [Ryohei Machida](https://github.com/Kogia-sima).
+Copyright © 2014-2016 Milo Yip, 2020 [Ryohei Machida](https://github.com/Kogia-sima).
 
 This project is [MIT](https://github.com/Kogia-sima/itoap/blob/master/LICENSE) licensed.
 
