@@ -347,8 +347,7 @@ unsafe fn write_u128_big(n: u128, mut buf: *mut u8) -> usize {
         buf = buf.add(8);
     }
 
-    let len = l + result_len * 8;
-    len
+    l + result_len * 8
 }
 
 #[inline]
