@@ -563,6 +563,34 @@ mod tests {
         }
     }
 
+    // random test
+    #[test]
+    fn test_u128_random() {
+        use super::Integer;
+        let mut buf = Vec::with_capacity(u128::MAX_LEN);
+
+        let mut state = 88172645463325252u64;
+
+        for _ in 0..100 {
+            // xorshift
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            let h = state;
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+
+            let value = (h as u128) << 64 | (state as u128);
+
+            unsafe {
+                buf.clear();
+                super::write_to_vec(&mut buf, value);
+                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", value));
+            }
+        }
+    }
+
     macro_rules! make_test {
         ($name:ident, $type:ty, $($value:expr),*) => {
             #[test]
