@@ -67,10 +67,9 @@ const DEC_DIGITS_LUT: &[u8] = b"\
       6061626364656667686970717273747576777879\
       8081828384858687888990919293949596979899";
 
-macro_rules! lookup {
-    ($idx:expr) => {
-        DEC_DIGITS_LUT.as_ptr().add(($idx as usize) << 1)
-    };
+#[inline]
+unsafe fn lookup<T: Into<usize>>(idx: T) -> *const u8 {
+    DEC_DIGITS_LUT.as_ptr().add((idx.into() as usize) << 1)
 }
 
 /// write integer smaller than 10000
@@ -83,20 +82,20 @@ unsafe fn write4(n: u16, buf: *mut u8) -> usize {
             *buf = n as u8 + 0x30;
             1
         } else {
-            ptr::copy_nonoverlapping(lookup!(n), buf, 2);
+            ptr::copy_nonoverlapping(lookup(n), buf, 2);
             2
         }
     } else if n < 1000 {
         let d1 = (n / 100) as u8;
         let d2 = n % 100;
         *buf = d1 + 0x30;
-        ptr::copy_nonoverlapping(lookup!(d2), buf.add(1), 2);
+        ptr::copy_nonoverlapping(lookup(d2), buf.add(1), 2);
         3
     } else {
         let d1 = n / 100;
         let d2 = n % 100;
-        ptr::copy_nonoverlapping(lookup!(d1), buf, 2);
-        ptr::copy_nonoverlapping(lookup!(d2), buf.add(2), 2);
+        ptr::copy_nonoverlapping(lookup(d1), buf, 2);
+        ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
         4
     }
 }
@@ -109,8 +108,8 @@ unsafe fn write4_pad(n: u16, buf: *mut u8) {
     let d1 = n / 100;
     let d2 = n % 100;
 
-    ptr::copy_nonoverlapping(lookup!(d1), buf, 2);
-    ptr::copy_nonoverlapping(lookup!(d2), buf.add(2), 2);
+    ptr::copy_nonoverlapping(lookup(d1), buf, 2);
+    ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
 }
 
 #[inline]
@@ -140,10 +139,10 @@ unsafe fn write8_pad(n: u32, buf: *mut u8) {
     let d3 = (c2 / 100) as u16;
     let d4 = (c2 % 100) as u16;
 
-    ptr::copy_nonoverlapping(lookup!(d1), buf, 2);
-    ptr::copy_nonoverlapping(lookup!(d2), buf.add(2), 2);
-    ptr::copy_nonoverlapping(lookup!(d3), buf.add(4), 2);
-    ptr::copy_nonoverlapping(lookup!(d4), buf.add(6), 2);
+    ptr::copy_nonoverlapping(lookup(d1), buf, 2);
+    ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
+    ptr::copy_nonoverlapping(lookup(d3), buf.add(4), 2);
+    ptr::copy_nonoverlapping(lookup(d4), buf.add(6), 2);
 }
 
 unsafe fn write_u8(n: u8, buf: *mut u8) -> usize {
@@ -151,13 +150,13 @@ unsafe fn write_u8(n: u8, buf: *mut u8) -> usize {
         *buf = n + 0x30;
         1
     } else if n < 100 {
-        ptr::copy_nonoverlapping(lookup!(n), buf, 2);
+        ptr::copy_nonoverlapping(lookup(n), buf, 2);
         2
     } else {
         let d1 = n / 100;
         let d2 = n % 100;
         *buf = d1 + 0x30;
-        ptr::copy_nonoverlapping(lookup!(d2), buf.add(1), 2);
+        ptr::copy_nonoverlapping(lookup(d2), buf.add(1), 2);
         3
     }
 }
@@ -168,7 +167,7 @@ unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
             *buf = n as u8 + 0x30;
             1
         } else {
-            ptr::copy_nonoverlapping(lookup!(n), buf, 2);
+            ptr::copy_nonoverlapping(lookup(n), buf, 2);
             2
         }
     } else if n < 10000 {
@@ -176,13 +175,13 @@ unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
             let d1 = (n / 100) as u8;
             let d2 = n % 100;
             *buf = d1 + 0x30;
-            ptr::copy_nonoverlapping(lookup!(d2), buf.add(1), 2);
+            ptr::copy_nonoverlapping(lookup(d2), buf.add(1), 2);
             3
         } else {
             let d1 = n / 100;
             let d2 = n % 100;
-            ptr::copy_nonoverlapping(lookup!(d1), buf, 2);
-            ptr::copy_nonoverlapping(lookup!(d2), buf.add(2), 2);
+            ptr::copy_nonoverlapping(lookup(d1), buf, 2);
+            ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
             4
         }
     } else {
@@ -210,7 +209,7 @@ unsafe fn write_u32(mut n: u32, buf: *mut u8) -> usize {
         n %= 100_000_000;
 
         let l = if a >= 10 {
-            ptr::copy_nonoverlapping(lookup!(a), buf, 2);
+            ptr::copy_nonoverlapping(lookup(a as usize), buf, 2);
             2
         } else {
             *buf = a as u8 + 0x30;
