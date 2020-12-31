@@ -1,6 +1,6 @@
 [package]
 name = "itoap"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Ryohei Machida <orcinus4627@gmail.com>"]
 description = "Even faster functions for printing integers with decimal format"
 homepage = "https://github.com/Kogia-sima/itoap"
