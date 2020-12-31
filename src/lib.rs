@@ -23,6 +23,7 @@
 //! # Examples
 //!
 //! ```
+//! # #[cfg(feature = "std")] {
 //! let value = 17u64;
 //!
 //! let mut buf = String::new();
@@ -30,6 +31,7 @@
 //! itoap::write_to_string(&mut buf, value);
 //!
 //! assert_eq!(buf, "value: 17");
+//! # }
 //! ```
 //!
 //! ```
