@@ -68,6 +68,7 @@ use common::*;
     any(target_arch = "x86_64", target_arch = "x86"),
     target_feature = "sse2",
     feature = "simd",
+    not(miri),
 )))]
 mod fallback;
 
@@ -75,6 +76,7 @@ mod fallback;
     any(target_arch = "x86_64", target_arch = "x86"),
     target_feature = "sse2",
     feature = "simd",
+    not(miri),
 )))]
 use fallback::{write_u32, write_u64};
 
@@ -82,6 +84,7 @@ use fallback::{write_u32, write_u64};
     any(target_arch = "x86_64", target_arch = "x86"),
     target_feature = "sse2",
     feature = "simd",
+    not(miri),
 ))]
 mod sse2;
 
@@ -89,6 +92,7 @@ mod sse2;
     any(target_arch = "x86_64", target_arch = "x86"),
     target_feature = "sse2",
     feature = "simd",
+    not(miri),
 ))]
 use sse2::{write_u32, write_u64};
 
@@ -248,8 +252,8 @@ pub fn write<W: std::io::Write, V: Integer>(
 #[cfg(all(test, feature = "alloc"))]
 mod tests {
     use alloc::format;
-    use alloc::vec::Vec;
     use alloc::string::String;
+    use alloc::vec::Vec;
 
     // comprehenisive test
     #[test]
@@ -379,10 +383,7 @@ mod tests {
                 fn test_write(val: $type, buf: &mut String) {
                     buf.clear();
                     super::write_to_string(buf, val);
-                    assert_eq!(
-                        buf.as_str(),
-                        format!("{}", val)
-                    );
+                    assert_eq!(buf.as_str(), format!("{}", val));
                 }
 
                 let mut buf = String::with_capacity(<$type>::MAX_LEN);
