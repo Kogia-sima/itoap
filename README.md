@@ -2,6 +2,8 @@
 
 [![Version](https://img.shields.io/crates/v/itoap)](https://crates.io/crates/itoap)
 [![docs](https://docs.rs/itoap/badge.svg)](https://docs.rs/itoap)
+[![Tests](https://github.com/Kogia-sima/itoap/workflows/Tests/badge.svg)](https://github.com/Kogia-sima/itoap/actions)
+[![codecov](https://codecov.io/gh/Kogia-sima/itoap/branch/master/graph/badge.svg?token=76KRG3QI6U)](https://codecov.io/gh/Kogia-sima/itoap)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Kogia-sima/itoap/blob/master/LICENSE)
 
 This crate provides even faster functions for printing integers with default format
