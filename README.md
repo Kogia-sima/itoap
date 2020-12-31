@@ -16,7 +16,7 @@ If you want to write integers to a `std::io::Write` or `std::fmt::Write`,
 [itoa](https://github.com/dtolnay/itoa) crate and `itoap` crate shows almost same
 performance, but `itoap` outputs slightly larger binary.
 
-The implementation is based on the `branchlut` algorithm from
+The implementation is based on the `sse2` algorithm from
 [itoa-benchmark](https://github.com/miloyip/itoa-benchmark) repository.
 While `itoa` crate writes integers from **last** digits, this algorithm writes
 from **first** digits. It allows integers to be written directly to the buffer.

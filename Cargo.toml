@@ -11,8 +11,9 @@ license = "MIT"
 edition = "2018"
 
 [features]
-default = ["std"]
+default = ["simd", "std"]
 alloc = []
+simd = []
 std = ["alloc"]
 
 [dev-dependencies]
