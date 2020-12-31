@@ -195,15 +195,7 @@ pub fn write_to_vec<V: Integer>(buf: &mut Vec<u8>, value: V) {
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline]
 pub fn write_to_string<V: Integer>(buf: &mut String, value: V) {
-    if buf.len() + V::MAX_LEN > buf.capacity() {
-        buf.reserve(V::MAX_LEN);
-    }
-
-    unsafe {
-        let l = value.write_to(buf.as_mut_vec().as_mut_ptr().add(buf.len()));
-        let new_len = buf.len() + l;
-        buf.as_mut_vec().set_len(new_len);
-    }
+    unsafe { write_to_vec(buf.as_mut_vec(), value) };
 }
 
 /// Write integer to an `io::Write`
