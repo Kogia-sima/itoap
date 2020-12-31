@@ -204,7 +204,7 @@ pub fn write_to_string<V: Integer>(buf: &mut String, value: V) {
     unsafe { write_to_vec(buf.as_mut_vec(), value) };
 }
 
-/// Write integer to an `io::Write`
+/// Write integer to an `fmt::Write`
 ///
 /// Note that this operation may be slow because it writes the `value` to stack memory,
 /// and then copy the result into `writer`.
