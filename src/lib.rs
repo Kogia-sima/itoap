@@ -181,9 +181,7 @@ pub unsafe fn write_to_ptr<V: Integer>(buf: *mut u8, value: V) -> usize {
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline]
 pub fn write_to_vec<V: Integer>(buf: &mut Vec<u8>, value: V) {
-    if buf.len() + V::MAX_LEN > buf.capacity() {
-        buf.reserve(V::MAX_LEN);
-    }
+    buf.reserve(V::MAX_LEN);
 
     unsafe {
         let l = value.write_to(buf.as_mut_ptr().add(buf.len()));
@@ -374,6 +372,7 @@ mod tests {
         }
     }
 
+    // cov:begin-ignore
     macro_rules! make_test {
         ($name:ident, $type:ident) => {
             #[test]
@@ -402,6 +401,7 @@ mod tests {
             }
         };
     }
+    // cov:end-ignore
 
     // boundary tests
     make_test!(test_u8, u8);
