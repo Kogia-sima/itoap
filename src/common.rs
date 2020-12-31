@@ -186,14 +186,16 @@ unsafe fn write_u128_big(n: u128, mut buf: *mut u8) -> usize {
 
         *rp = carry;
 
-        if x[0] == 0 && x[1] == 0 && x[2] == 0 && x[3] == 0 {
+        if x == [0, 0, 0, 0] {
             break;
         }
 
         rp = rp.add(1);
     }
 
-    let result_len = (rp as usize - rp_begin as usize) / core::mem::size_of::<u32>();
+    let result_len = (rp as usize)
+        .wrapping_sub(rp_begin as usize)
+        .wrapping_div(core::mem::size_of::<u32>());
     debug_assert!(result_len < 5);
 
     let l = write8(*rp, buf);

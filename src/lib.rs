@@ -249,12 +249,12 @@ pub fn write<W: std::io::Write, V: Integer>(
 mod tests {
     use alloc::format;
     use alloc::vec::Vec;
+    use alloc::string::String;
 
     // comprehenisive test
     #[test]
     fn test_i8_all() {
-        use super::Integer;
-        let mut buf = Vec::with_capacity(i8::MAX_LEN);
+        let mut buf = Vec::new();
 
         for n in core::i8::MIN..=core::i8::MAX {
             unsafe {
@@ -376,16 +376,16 @@ mod tests {
             fn $name() {
                 use super::Integer;
 
-                fn test_write(val: $type, buf: &mut Vec<u8>) {
+                fn test_write(val: $type, buf: &mut String) {
                     buf.clear();
-                    super::write_to_vec(buf, val);
+                    super::write_to_string(buf, val);
                     assert_eq!(
-                        unsafe { core::str::from_utf8_unchecked(&*buf) },
+                        buf.as_str(),
                         format!("{}", val)
                     );
                 }
 
-                let mut buf = Vec::with_capacity(<$type>::MAX_LEN);
+                let mut buf = String::with_capacity(<$type>::MAX_LEN);
 
                 let mut current = 1;
                 while current <= core::$type::MAX / 10 {
@@ -399,7 +399,7 @@ mod tests {
                 test_write(core::$type::MIN, &mut buf);
                 test_write(core::$type::MAX, &mut buf);
             }
-        }
+        };
     }
 
     // boundary tests

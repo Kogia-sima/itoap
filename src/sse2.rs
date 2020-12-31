@@ -79,7 +79,7 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
 }
 
 unsafe fn shift_digits_sse2(a: __m128i, digit: u8) -> __m128i {
-    debug_assert!(digit <= 8);
+    debug_assert!(digit < 8);
     match digit {
         0 => a,
         1 => _mm_srli_si128(a, 1),
@@ -89,8 +89,7 @@ unsafe fn shift_digits_sse2(a: __m128i, digit: u8) -> __m128i {
         5 => _mm_srli_si128(a, 5),
         6 => _mm_srli_si128(a, 6),
         7 => _mm_srli_si128(a, 7),
-        8 => _mm_srli_si128(a, 8),
-        _ => hint::unreachable_unchecked(),
+        _ => hint::unreachable_unchecked(), // cov:ignore
     }
 }
 
