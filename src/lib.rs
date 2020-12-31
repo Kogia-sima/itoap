@@ -275,6 +275,7 @@ mod tests {
 
     // random test
     #[test]
+    #[cfg(not(miri))]
     fn test_u64_random() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u64::MAX_LEN);
@@ -297,6 +298,7 @@ mod tests {
 
     // random test
     #[test]
+    #[cfg(not(miri))]
     fn test_u128_random() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u128::MAX_LEN);
@@ -325,6 +327,7 @@ mod tests {
 
     // random digits test
     #[test]
+    #[cfg(not(miri))]
     fn test_u64_random_digits() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u64::MAX_LEN);
@@ -348,6 +351,7 @@ mod tests {
 
     // random digits test
     #[test]
+    #[cfg(not(miri))]
     fn test_u128_random_digits() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u128::MAX_LEN);
