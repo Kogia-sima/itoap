@@ -72,10 +72,8 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
     // v6 = v5 << 16 = [ 0, a0, ab0, abc0, 0, e0, ef0, efg0 ]
     let v6 = _mm_slli_epi64(v5, 16);
 
-    // v7 = v4 - v6 = { a, b, c, d, e, f, g, h }
-    let v7 = _mm_sub_epi16(v4, v6);
-
-    return v7;
+    // v4 - v6 = { a, b, c, d, e, f, g, h }
+    _mm_sub_epi16(v4, v6)
 }
 
 unsafe fn shift_digits_sse2(a: __m128i, digit: u8) -> __m128i {
