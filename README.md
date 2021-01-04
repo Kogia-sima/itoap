@@ -24,6 +24,10 @@ While `itoa` crate writes integers from **last** digits, this algorithm writes
 from **first** digits. It allows integers to be written directly to the buffer.
 That's why `itoap` is faster than `itoa`.
 
+## Benchmark result
+
+![Benchmark result](./bench.png)
+
 ## Author
 
 👤 **Ryohei Machida**
