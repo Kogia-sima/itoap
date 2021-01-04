@@ -15,6 +15,7 @@ struct Aligned<T>(T);
 impl<T> std::ops::Deref for Aligned<T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &T {
         &self.0
     }
@@ -76,6 +77,7 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
     _mm_sub_epi16(v4, v6)
 }
 
+#[inline]
 unsafe fn shift_digits_sse2(a: __m128i, digit: u8) -> __m128i {
     debug_assert!(digit < 8);
     match digit {
