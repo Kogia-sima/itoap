@@ -181,9 +181,11 @@ pub unsafe fn write_to_ptr<V: Integer>(buf: *mut u8, value: V) -> usize {
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline]
 pub fn write_to_vec<V: Integer>(buf: &mut Vec<u8>, value: V) {
+    debug_assert!(buf.len() <= core::isize::MAX as usize);
+
     // benchmark result suggests that we gain more speed by manually checking the
     // buffer capacity and limits `reserve()` call
-    if buf.len() + V::MAX_LEN > buf.capacity() {
+    if buf.len().wrapping_add(V::MAX_LEN) > buf.capacity() {
         buf.reserve(V::MAX_LEN);
     }
 
