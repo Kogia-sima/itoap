@@ -421,4 +421,46 @@ mod tests {
     make_test!(test_i32, i32);
     make_test!(test_i64, i64);
     make_test!(test_i128, i128);
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn fmt_test() {
+        use alloc::string::ToString;
+
+        let mut buf = String::new();
+
+        let mut state = 1812433253974120613u64;
+        for _ in 0..100 {
+            // xorshift
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+
+            let value = state as i64;
+            buf.clear();
+            super::fmt(&mut buf, value).unwrap();
+            assert_eq!(buf, value.to_string());
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn io_test() {
+        use alloc::string::ToString;
+
+        let mut buf = Vec::new();
+
+        let mut state = 2685821657736338717u64;
+        for _ in 0..100 {
+            // xorshift
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+
+            let value = state as i64;
+            buf.clear();
+            super::write(&mut buf, value).unwrap();
+            assert_eq!(std::str::from_utf8(&*buf).unwrap(), value.to_string());
+        }
+    }
 }
