@@ -4,6 +4,7 @@
 [![docs](https://docs.rs/itoap/badge.svg)](https://docs.rs/itoap)
 [![Tests](https://github.com/Kogia-sima/itoap/workflows/Tests/badge.svg)](https://github.com/Kogia-sima/itoap/actions)
 [![codecov](https://codecov.io/gh/Kogia-sima/itoap/branch/master/graph/badge.svg?token=76KRG3QI6U)](https://codecov.io/gh/Kogia-sima/itoap)
+[![Rust 1.36](https://img.shields.io/badge/rust-1.36+-lightgray.svg)](https://blog.rust-lang.org/2019/07/04/Rust-1.36.0.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Kogia-sima/itoap/blob/master/LICENSE)
 
 This crate provides even faster functions for printing integers with default format
