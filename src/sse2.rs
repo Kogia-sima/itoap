@@ -6,7 +6,6 @@ use core::arch::x86::*;
 use core::arch::x86_64::*;
 
 use crate::common::{lookup, write4, write4_pad};
-use core::hint;
 use core::ptr;
 
 #[repr(align(16))]
@@ -77,22 +76,6 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
     _mm_sub_epi16(v4, v6)
 }
 
-#[inline]
-unsafe fn shift_digits_sse2(a: __m128i, digit: u8) -> __m128i {
-    debug_assert!(digit < 8);
-    match digit {
-        0 => a,
-        1 => _mm_srli_si128(a, 1),
-        2 => _mm_srli_si128(a, 2),
-        3 => _mm_srli_si128(a, 3),
-        4 => _mm_srli_si128(a, 4),
-        5 => _mm_srli_si128(a, 5),
-        6 => _mm_srli_si128(a, 6),
-        7 => _mm_srli_si128(a, 7),
-        _ => hint::unreachable_unchecked(), // cov:ignore
-    }
-}
-
 pub unsafe fn write_u32(mut n: u32, buf: *mut u8) -> usize {
     if n < 10000 {
         write4(n as u16, buf)
@@ -139,24 +122,28 @@ pub unsafe fn write_u64(mut n: u64, buf: *mut u8) -> usize {
         write4_pad(c as u16, buf.add(l));
         l + 4
     } else if n < 10_000_000_000_000_000 {
-        let v0 = (n / 100000000) as u32;
-        let v1 = (n % 100000000) as u32;
+        let v0 = n / 100_000_000;
+        let v1 = (n % 100_000_000) as u32;
 
-        let a0 = convert_8digits_sse2(v0);
-        let a1 = convert_8digits_sse2(v1);
+        let l = if v0 < 10000 {
+            write4(v0 as u16, buf)
+        } else {
+            let b0 = v0 / 10000;
+            let c0 = v0 % 10000;
+            let l = write4(b0 as u16, buf);
+            write4_pad(c0 as u16, buf.add(l));
+            l + 4
+        };
 
-        // Convert to bytes, add '0'
-        let va = _mm_add_epi8(_mm_packus_epi16(a0, a1), _mm_set1_epi8(b'0' as i8));
+        let b = convert_8digits_sse2(v1);
+        let ba = _mm_add_epi8(
+            _mm_packus_epi16(_mm_setzero_si128(), b),
+            _mm_set1_epi8(b'0' as i8),
+        );
+        let result = _mm_srli_si128(ba, 8);
+        _mm_storel_epi64(buf.add(l) as *mut __m128i, result);
 
-        // Count number of digit
-        let mask = _mm_movemask_epi8(_mm_cmpeq_epi8(va, _mm_set1_epi8(b'0' as i8)));
-        let digit = (!mask | 0x8000).trailing_zeros();
-
-        // Shift digits to the beginning
-        let result = shift_digits_sse2(va, digit as u8);
-        _mm_storeu_si128(buf as *mut __m128i, result);
-
-        16 - digit as usize
+        l + 8
     } else {
         let a = n / 10_000_000_000_000_000; // 1 to 1844
         n %= 10_000_000_000_000_000;
