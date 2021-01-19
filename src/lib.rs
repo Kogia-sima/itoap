@@ -258,6 +258,7 @@ mod tests {
     use alloc::format;
     use alloc::string::String;
     use alloc::vec::Vec;
+    use random_fast_rng::{FastRng, Random};
 
     // comprehenisive test
     #[test]
@@ -279,19 +280,14 @@ mod tests {
     fn test_u64_random() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u64::MAX_LEN);
-
-        let mut state = 88172645463325252u64;
+        let mut rng = FastRng::new();
 
         for _ in 0..10000 {
-            // xorshift
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-
+            let value = rng.get_u64();
             unsafe {
                 buf.clear();
-                super::write_to_vec(&mut buf, state);
-                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", state));
+                super::write_to_vec(&mut buf, value);
+                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", value));
             }
         }
     }
@@ -302,21 +298,10 @@ mod tests {
     fn test_u128_random() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u128::MAX_LEN);
-
-        let mut state = 88172645463325252u64;
+        let mut rng = FastRng::new();
 
         for _ in 0..10000 {
-            // xorshift
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-            let h = state;
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-
-            let value = (h as u128) << 64 | (state as u128);
-
+            let value = rng.get_u128();
             unsafe {
                 buf.clear();
                 super::write_to_vec(&mut buf, value);
@@ -331,16 +316,10 @@ mod tests {
     fn test_u64_random_digits() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u64::MAX_LEN);
-
-        let mut state = 2721461171958153741u64;
+        let mut rng = FastRng::new();
 
         for _ in 0..10000 {
-            // xorshift
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-
-            let value = state >> (state % 64);
+            let value = rng.get_u64() >> (rng.get_u8() % 64);
             unsafe {
                 buf.clear();
                 super::write_to_vec(&mut buf, value);
@@ -355,21 +334,10 @@ mod tests {
     fn test_u128_random_digits() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u128::MAX_LEN);
-
-        let mut state = 88172645463325252u64;
+        let mut rng = FastRng::new();
 
         for _ in 0..10000 {
-            // xorshift
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-            let h = state;
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-
-            let value = ((h as u128) << 64 | (state as u128)) >> (state % 128);
-
+            let value = rng.get_u128() >> (rng.get_u8() % 128);
             unsafe {
                 buf.clear();
                 super::write_to_vec(&mut buf, value);
@@ -428,15 +396,10 @@ mod tests {
         use alloc::string::ToString;
 
         let mut buf = String::new();
+        let mut rng = FastRng::new();
 
-        let mut state = 1812433253974120613u64;
         for _ in 0..100 {
-            // xorshift
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-
-            let value = state as i64;
+            let value = rng.gen::<i32>();
             buf.clear();
             super::fmt(&mut buf, value).unwrap();
             assert_eq!(buf, value.to_string());
@@ -449,15 +412,11 @@ mod tests {
         use alloc::string::ToString;
 
         let mut buf = Vec::new();
+        let mut rng = FastRng::new();
 
-        let mut state = 2685821657736338717u64;
         for _ in 0..100 {
             // xorshift
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-
-            let value = state as i64;
+            let value = rng.gen::<i64>();
             buf.clear();
             super::write(&mut buf, value).unwrap();
             assert_eq!(std::str::from_utf8(&*buf).unwrap(), value.to_string());
