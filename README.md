@@ -27,7 +27,16 @@ That's why `itoap` is faster than `itoa`.
 
 ## Benchmark result
 
+Benchmark program was executed under the following environment:
+
+* CPU model name: Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz
+* CPU micro architecture: Sky Lake
+* Standard libc implementation: glibc 2.31.0
+* Rust compiler: rustc 1.48.0
+
 ![Benchmark result](./bench.png)
+
+:warning: performance of `itoa` crate highly depends on the CPU architecture and libc implementation. For example, if you use Apple libc, then the performance difference between two crates is a bit smaller.
 
 ## Author
 
