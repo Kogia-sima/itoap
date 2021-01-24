@@ -41,8 +41,7 @@
 //! unsafe {
 //!     let mut buf = [MaybeUninit::<u8>::uninit(); i32::MAX_LEN];
 //!     let len = itoap::write_to_ptr(buf.as_mut_ptr() as *mut u8, -2953);
-//!     let buf: [u8; i32::MAX_LEN] = transmute(buf);
-//!     let result = buf.get_unchecked(0..len);
+//!     let result: &[u8] = transmute(&buf[..len]);
 //!     assert_eq!(result, b"-2953");
 //! }
 //! ```
@@ -213,6 +212,7 @@ pub fn write_to_string<V: Integer>(buf: &mut String, value: V) {
 ///
 /// This function is for compatibility with [itoa](https://docs.rs/itoa) crate and you
 /// should use `write_to_vec` or `write_to_string` if possible.
+#[inline]
 pub fn fmt<W: core::fmt::Write, V: Integer>(
     mut writer: W,
     value: V,
@@ -222,9 +222,8 @@ pub fn fmt<W: core::fmt::Write, V: Integer>(
     unsafe {
         let mut buf = [MaybeUninit::<u8>::uninit(); 40];
         let l = value.write_to(buf.as_mut_ptr() as *mut u8);
-        let buf = core::mem::transmute::<_, [u8; 40]>(buf);
-        let slc = core::str::from_utf8_unchecked(buf.get_unchecked(0..l));
-        writer.write_str(slc)
+        let slc = core::mem::transmute::<_, &[u8]>(buf.get_unchecked(..l));
+        writer.write_str(core::str::from_utf8_unchecked(slc))
     }
 }
 
@@ -238,6 +237,7 @@ pub fn fmt<W: core::fmt::Write, V: Integer>(
 /// should use `write_to_vec` or `write_to_string` if possible.
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+#[inline]
 pub fn write<W: std::io::Write, V: Integer>(
     mut writer: W,
     value: V,
@@ -247,8 +247,7 @@ pub fn write<W: std::io::Write, V: Integer>(
     unsafe {
         let mut buf = [MaybeUninit::<u8>::uninit(); 40];
         let l = value.write_to(buf.as_mut_ptr() as *mut u8);
-        let buf = core::mem::transmute::<_, [u8; 40]>(buf);
-        let slc = buf.get_unchecked(0..l);
+        let slc = core::mem::transmute::<_, &[u8]>(buf.get_unchecked(..l));
         writer.write(slc)
     }
 }
