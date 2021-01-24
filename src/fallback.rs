@@ -1,6 +1,6 @@
 use core::ptr;
 
-use crate::common::{write4, write4_pad, write8_pad, lookup};
+use crate::common::{lookup, write4, write4_pad, write8_pad};
 
 pub unsafe fn write_u32(mut n: u32, buf: *mut u8) -> usize {
     if n < 10000 {
