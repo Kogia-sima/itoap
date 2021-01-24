@@ -392,13 +392,14 @@ mod tests {
 
     #[test]
     #[cfg(feature = "alloc")]
+    #[cfg(not(miri))]
     fn fmt_test() {
         use alloc::string::ToString;
 
         let mut buf = String::new();
         let mut rng = FastRng::new();
 
-        for _ in 0..100 {
+        for _ in 0..1000 {
             let value = rng.gen::<i32>();
             buf.clear();
             super::fmt(&mut buf, value).unwrap();
@@ -408,13 +409,14 @@ mod tests {
 
     #[test]
     #[cfg(feature = "std")]
+    #[cfg(not(miri))]
     fn io_test() {
         use alloc::string::ToString;
 
         let mut buf = Vec::new();
         let mut rng = FastRng::new();
 
-        for _ in 0..100 {
+        for _ in 0..1000 {
             // xorshift
             let value = rng.gen::<i64>();
             buf.clear();
