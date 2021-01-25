@@ -60,16 +60,31 @@ jobs:
           cargo miri test --no-default-features --features std
           cargo miri test --no-default-features --all-features
 
-  test-ios:
-    runs-on: macos-latest
+  test-cross:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        target:
+          - aarch64-apple-ios
+          - armv7-unknown-linux-gnueabihf
+          - powerpc-unknown-linux-gnu
+          - riscv64gc-unknown-linux-gnu
+          - mips-unknown-linux-gnu           # 32-bit big endian
+          - mipsel-unknown-linux-musl        # 32-bit little endian
+          - mips64-unknown-linux-gnuabi64    # 64-bit big endian
+          - mips64el-unknown-linux-gnuabi64  # 64-bit little endian
     steps:
       - uses: actions/checkout@v2
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
-            profile: minimal
-            toolchain: nightly
-            target: aarch64-apple-ios
-            override: true
-      - name: Build only
-        run: cargo build --target=aarch64-apple-ios
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Cross test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --target ${{ matrix.target }}
+          use-cross: true
