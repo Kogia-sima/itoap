@@ -257,7 +257,8 @@ mod tests {
     use alloc::format;
     use alloc::string::String;
     use alloc::vec::Vec;
-    use random_fast_rng::{FastRng, Random};
+    use rand::rngs::SmallRng;
+    use rand::{SeedableRng, Rng};
 
     // comprehenisive test
     #[test]
@@ -279,10 +280,10 @@ mod tests {
     fn test_u64_random() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u64::MAX_LEN);
-        let mut rng = FastRng::new();
+        let mut rng = SmallRng::seed_from_u64(0xb0d39604298743d0);
 
         for _ in 0..10000 {
-            let value = rng.get_u64();
+            let value = rng.gen::<u64>();
             unsafe {
                 buf.clear();
                 super::write_to_vec(&mut buf, value);
@@ -297,10 +298,10 @@ mod tests {
     fn test_u128_random() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u128::MAX_LEN);
-        let mut rng = FastRng::new();
+        let mut rng = SmallRng::seed_from_u64(0x73cdb9a66816e721);
 
         for _ in 0..10000 {
-            let value = rng.get_u128();
+            let value = rng.gen::<u128>();
             unsafe {
                 buf.clear();
                 super::write_to_vec(&mut buf, value);
@@ -315,10 +316,10 @@ mod tests {
     fn test_u64_random_digits() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u64::MAX_LEN);
-        let mut rng = FastRng::new();
+        let mut rng = SmallRng::seed_from_u64(0xe6f827f2dce6fae4);
 
         for _ in 0..10000 {
-            let value = rng.get_u64() >> (rng.get_u8() % 64);
+            let value = rng.gen::<u64>() >> (rng.gen::<u8>() % 64);
             unsafe {
                 buf.clear();
                 super::write_to_vec(&mut buf, value);
@@ -333,10 +334,10 @@ mod tests {
     fn test_u128_random_digits() {
         use super::Integer;
         let mut buf = Vec::with_capacity(u128::MAX_LEN);
-        let mut rng = FastRng::new();
+        let mut rng = SmallRng::seed_from_u64(0xd7b31256794c1406);
 
         for _ in 0..10000 {
-            let value = rng.get_u128() >> (rng.get_u8() % 128);
+            let value = rng.gen::<u128>() >> (rng.gen::<u8>() % 128);
             unsafe {
                 buf.clear();
                 super::write_to_vec(&mut buf, value);
@@ -396,7 +397,7 @@ mod tests {
         use alloc::string::ToString;
 
         let mut buf = String::new();
-        let mut rng = FastRng::new();
+        let mut rng = SmallRng::seed_from_u64(0xa0983844f42abf9d);
 
         for _ in 0..1000 {
             let value = rng.gen::<i32>();
@@ -413,7 +414,7 @@ mod tests {
         use alloc::string::ToString;
 
         let mut buf = Vec::new();
-        let mut rng = FastRng::new();
+        let mut rng = SmallRng::seed_from_u64(0x36f09d2f9acc29b8);
 
         for _ in 0..1000 {
             // xorshift
