@@ -368,7 +368,7 @@ mod tests {
     }
 
     // cov:begin-ignore
-    macro_rules! make_test {
+    macro_rules! boundary_test {
         ($name:ident, $type:ident) => {
             #[test]
             fn $name() {
@@ -393,17 +393,19 @@ mod tests {
     // cov:end-ignore
 
     // boundary tests
-    make_test!(test_u8, u8);
-    make_test!(test_u16, u16);
-    make_test!(test_u32, u32);
-    make_test!(test_u64, u64);
-    make_test!(test_u128, u128);
+    boundary_test!(test_u8, u8);
+    boundary_test!(test_u16, u16);
+    boundary_test!(test_u32, u32);
+    boundary_test!(test_u64, u64);
+    boundary_test!(test_u128, u128);
+    boundary_test!(test_usize, usize);
 
-    make_test!(test_i8, i8);
-    make_test!(test_i16, i16);
-    make_test!(test_i32, i32);
-    make_test!(test_i64, i64);
-    make_test!(test_i128, i128);
+    boundary_test!(test_i8, i8);
+    boundary_test!(test_i16, i16);
+    boundary_test!(test_i32, i32);
+    boundary_test!(test_i64, i64);
+    boundary_test!(test_i128, i128);
+    boundary_test!(test_isize, isize);
 
     #[test]
     #[cfg(feature = "alloc")]
