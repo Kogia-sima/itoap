@@ -1,0 +1,21 @@
+[package]
+name = "itoap-bench"
+version = "0.1.0"
+authors = ["Ryohei Machida <orcinus4627@gmail.com>"]
+description = "Even faster functions for printing integers with decimal format"
+homepage = "https://github.com/Kogia-sima/itoap"
+repository = "https://github.com/Kogia-sima/itoap"
+readme = "../README.md"
+categories = ["value-formatting"]
+license = "MIT"
+edition = "2018"
+publish = false
+
+[dev-dependencies]
+bencher = "0.1.5"
+itoa = { version = "0.4.6", features = ["i128"] }
+itoap = { path = "../" }
+
+[[bench]]
+name = "bench"
+harness = false

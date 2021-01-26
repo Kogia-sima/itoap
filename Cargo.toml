@@ -10,6 +10,11 @@ categories = ["value-formatting"]
 license = "MIT"
 edition = "2018"
 
+[workspace]
+members = [
+  "itoap-bench"
+]
+
 [features]
 default = ["simd", "std"]
 alloc = []
@@ -17,13 +22,7 @@ simd = []
 std = ["alloc"]
 
 [dev-dependencies]
-bencher = "0.1.5"
-itoa = { version = "0.4.6", features = ["i128"] }
 rand = { version = "0.8.2", features = ["small_rng"], default-features = false }
-
-[[bench]]
-name = "bench"
-harness = false
 
 [package.metadata.docs.rs]
 all-features = true
