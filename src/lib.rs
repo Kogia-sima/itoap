@@ -252,25 +252,70 @@ pub fn write<W: std::io::Write, V: Integer>(
     }
 }
 
-#[cfg(all(test, feature = "alloc"))]
+#[cfg(test)]
 mod tests {
-    use alloc::format;
-    use alloc::string::String;
-    use alloc::vec::Vec;
+    use core::cmp::PartialEq;
+    use core::fmt;
     use rand::rngs::SmallRng;
-    use rand::{SeedableRng, Rng};
+    use rand::{Rng, SeedableRng};
+
+    struct ArrayStr {
+        buf: [u8; 40],
+        len: usize,
+    }
+
+    impl ArrayStr {
+        fn new() -> Self {
+            Self {
+                buf: [0u8; 40],
+                len: 0,
+            }
+        }
+
+        fn as_str(&self) -> &str {
+            core::str::from_utf8(&self.buf[..self.len]).unwrap()
+        }
+    }
+
+    impl fmt::Write for ArrayStr {
+        fn write_str(&mut self, s: &str) -> fmt::Result {
+            self.buf[self.len..self.len + s.len()].copy_from_slice(s.as_bytes());
+            self.len += s.len();
+            Ok(())
+        }
+    }
+
+    impl fmt::Debug for ArrayStr {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            self.as_str().fmt(f)
+        }
+    }
+
+    impl PartialEq<ArrayStr> for ArrayStr {
+        fn eq(&self, rhs: &ArrayStr) -> bool {
+            self.as_str().eq(rhs.as_str())
+        }
+    }
+
+    fn itoap_fmt<I: super::Integer>(value: I) -> ArrayStr {
+        let mut buf = ArrayStr::new();
+        let _ = super::fmt(&mut buf, value);
+        buf
+    }
+
+    fn std_fmt<I: fmt::Display>(value: I) -> ArrayStr {
+        use core::fmt::Write;
+
+        let mut buf = ArrayStr::new();
+        let _ = write!(buf, "{}", value);
+        buf
+    }
 
     // comprehenisive test
     #[test]
     fn test_i8_all() {
-        let mut buf = Vec::new();
-
         for n in core::i8::MIN..=core::i8::MAX {
-            unsafe {
-                buf.clear();
-                super::write_to_vec(&mut buf, n);
-                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", n));
-            }
+            assert_eq!(itoap_fmt(n), std_fmt(n));
         }
     }
 
@@ -278,17 +323,11 @@ mod tests {
     #[test]
     #[cfg(not(miri))]
     fn test_u64_random() {
-        use super::Integer;
-        let mut buf = Vec::with_capacity(u64::MAX_LEN);
         let mut rng = SmallRng::seed_from_u64(0xb0d39604298743d0);
 
         for _ in 0..10000 {
             let value = rng.gen::<u64>();
-            unsafe {
-                buf.clear();
-                super::write_to_vec(&mut buf, value);
-                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", value));
-            }
+            assert_eq!(itoap_fmt(value), std_fmt(value));
         }
     }
 
@@ -296,17 +335,11 @@ mod tests {
     #[test]
     #[cfg(not(miri))]
     fn test_u128_random() {
-        use super::Integer;
-        let mut buf = Vec::with_capacity(u128::MAX_LEN);
         let mut rng = SmallRng::seed_from_u64(0x73cdb9a66816e721);
 
-        for _ in 0..10000 {
+        for _ in 0..1000 {
             let value = rng.gen::<u128>();
-            unsafe {
-                buf.clear();
-                super::write_to_vec(&mut buf, value);
-                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", value));
-            }
+            assert_eq!(itoap_fmt(value), std_fmt(value));
         }
     }
 
@@ -314,17 +347,11 @@ mod tests {
     #[test]
     #[cfg(not(miri))]
     fn test_u64_random_digits() {
-        use super::Integer;
-        let mut buf = Vec::with_capacity(u64::MAX_LEN);
         let mut rng = SmallRng::seed_from_u64(0xe6f827f2dce6fae4);
 
-        for _ in 0..10000 {
+        for _ in 0..1000 {
             let value = rng.gen::<u64>() >> (rng.gen::<u8>() % 64);
-            unsafe {
-                buf.clear();
-                super::write_to_vec(&mut buf, value);
-                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", value));
-            }
+            assert_eq!(itoap_fmt(value), std_fmt(value));
         }
     }
 
@@ -332,17 +359,11 @@ mod tests {
     #[test]
     #[cfg(not(miri))]
     fn test_u128_random_digits() {
-        use super::Integer;
-        let mut buf = Vec::with_capacity(u128::MAX_LEN);
         let mut rng = SmallRng::seed_from_u64(0xd7b31256794c1406);
 
-        for _ in 0..10000 {
+        for _ in 0..1000 {
             let value = rng.gen::<u128>() >> (rng.gen::<u8>() % 128);
-            unsafe {
-                buf.clear();
-                super::write_to_vec(&mut buf, value);
-                assert_eq!(core::str::from_utf8_unchecked(&*buf), format!("{}", value));
-            }
+            assert_eq!(itoap_fmt(value), std_fmt(value));
         }
     }
 
@@ -351,27 +372,21 @@ mod tests {
         ($name:ident, $type:ident) => {
             #[test]
             fn $name() {
-                use super::Integer;
-
-                fn test_write(val: $type, buf: &mut String) {
-                    buf.clear();
-                    super::write_to_string(buf, val);
-                    assert_eq!(buf.as_str(), format!("{}", val));
-                }
-
-                let mut buf = String::with_capacity(<$type>::MAX_LEN);
-
                 let mut current = 1;
-                while current <= core::$type::MAX / 10 {
-                    test_write(current - 1, &mut buf);
-                    test_write(current, &mut buf);
-                    test_write(current + 1, &mut buf);
+                loop {
+                    assert_eq!(itoap_fmt(current - 1), std_fmt(current - 1));
+                    assert_eq!(itoap_fmt(current), std_fmt(current));
+                    assert_eq!(itoap_fmt(current + 1), std_fmt(current + 1));
+
+                    if current > core::$type::MAX / 10 {
+                        break;
+                    }
 
                     current *= 10;
                 }
 
-                test_write(core::$type::MIN, &mut buf);
-                test_write(core::$type::MAX, &mut buf);
+                assert_eq!(itoap_fmt(core::$type::MIN), std_fmt(core::$type::MIN));
+                assert_eq!(itoap_fmt(core::$type::MAX), std_fmt(core::$type::MAX));
             }
         };
     }
@@ -393,8 +408,8 @@ mod tests {
     #[test]
     #[cfg(feature = "alloc")]
     #[cfg(not(miri))]
-    fn fmt_test() {
-        use alloc::string::ToString;
+    fn write_to_string_test() {
+        use alloc::string::{String, ToString};
 
         let mut buf = String::new();
         let mut rng = SmallRng::seed_from_u64(0xa0983844f42abf9d);
@@ -402,7 +417,7 @@ mod tests {
         for _ in 0..1000 {
             let value = rng.gen::<i32>();
             buf.clear();
-            super::fmt(&mut buf, value).unwrap();
+            super::write_to_string(&mut buf, value);
             assert_eq!(buf, value.to_string());
         }
     }
@@ -412,6 +427,7 @@ mod tests {
     #[cfg(not(miri))]
     fn io_test() {
         use alloc::string::ToString;
+        use alloc::vec::Vec;
 
         let mut buf = Vec::new();
         let mut rng = SmallRng::seed_from_u64(0x36f09d2f9acc29b8);
