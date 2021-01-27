@@ -36,7 +36,7 @@ Benchmark program was executed under the following environment:
 
 ![Benchmark result](./bench.png)
 
-:warning: performance of `itoa` crate highly depends on the CPU architecture and libc implementation. For example, if you use Apple libc, then the performance difference between two crates is a bit smaller.
+:warning: performance of `itoa` crate highly depends on the CPU architecture and libc implementation.
 
 ## Author
 
