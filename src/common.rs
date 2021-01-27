@@ -139,8 +139,7 @@ pub unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
 // current implementation is based on [6502's method](https://stackoverflow.com/a/8025958),
 // but may changes if faster algorithm will be found.
 unsafe fn write_u128_big(n: u128, mut buf: *mut u8) -> usize {
-    use core::mem::{transmute_copy, MaybeUninit};
-
+    use core::mem::{transmute, transmute_copy};
     debug_assert!(n > core::u64::MAX as u128);
 
     // expand to per-32-bit elements.
@@ -149,13 +148,9 @@ unsafe fn write_u128_big(n: u128, mut buf: *mut u8) -> usize {
 
     // hold per-8-digits results
     // i.e. result[0] holds n % 10^8, result[1] holds (n / 10^8) % 10^8, ...
-    let mut result = [MaybeUninit::<u32>::uninit(); 5];
+    let mut result = [0u32; 5];
 
-    let rp_begin = result.as_mut_ptr() as *mut u32;
-    let mut rp = rp_begin;
-
-    // loops at most 5 times
-    loop {
+    for i in 0..2 {
         #[cfg(target_endian = "little")]
         const ORDER: [usize; 4] = [3, 2, 1, 0];
         #[cfg(target_endian = "big")]
@@ -165,7 +160,6 @@ unsafe fn write_u128_big(n: u128, mut buf: *mut u8) -> usize {
         let mut d;
 
         // performs x /= 10^8 and store the remainder to carry
-        // TODO: speed up using SIMD intrinsics
         {
             d = ((carry as u64) << 32) | x[ORDER[0]] as u64;
             x[ORDER[0]] = (d / 100_000_000) as u32;
@@ -184,26 +178,38 @@ unsafe fn write_u128_big(n: u128, mut buf: *mut u8) -> usize {
             carry = (d % 100_000_000) as u32;
         }
 
-        *rp = carry;
-
-        if x == [0, 0, 0, 0] {
-            break;
-        }
-
-        rp = rp.add(1);
+        result[i] = carry;
     }
 
-    let result_len = (rp as usize)
-        .wrapping_sub(rp_begin as usize)
-        .wrapping_div(core::mem::size_of::<u32>());
-    debug_assert!(result_len < 5);
+    let x: u128 = transmute(x);
+    debug_assert!(x > 0);
+    debug_assert!(x <= 34_028_236_692_093_846_346_337);
+    let result_len = if x >= 10_000_000_000_000_000 {
+        // performs x /= 10^16
+        let quot = (x >> 16) as u64 / 152_587_890_625;
+        let rem = (x - 10_000_000_000_000_000 * quot as u128) as u64;
 
-    let l = write8(*rp, buf);
+        debug_assert!(quot <= 3_402_823);
+        debug_assert!(rem < 10_000_000_000_000_000);
+
+        result[2] = (rem % 100_000_000) as u32;
+        result[3] = (rem / 100_000_000) as u32;
+        result[4] = quot as u32;
+        4
+    } else if x >= 100_000_000 {
+        result[2] = ((x as u64) % 100_000_000) as u32;
+        result[3] = ((x as u64) / 100_000_000) as u32;
+        3
+    } else {
+        result[2] = x as u32;
+        2
+    };
+
+    let l = write8(result[result_len], buf);
     buf = buf.add(l);
 
-    while rp > rp_begin {
-        rp = rp.sub(1);
-        write8_pad(*rp, buf);
+    for i in (0..result_len).rev() {
+        write8_pad(result[i], buf);
         buf = buf.add(8);
     }
 
