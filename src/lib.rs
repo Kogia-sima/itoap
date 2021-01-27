@@ -127,14 +127,14 @@ macro_rules! impl_integer {
 
             #[inline]
             unsafe fn write_to(self, mut buf: *mut u8) -> usize {
-                if self >= 0 {
-                    $func(self as $conv, buf)
-                } else {
+                let mut n = self as $conv;
+                if self < 0 {
                     *buf = b'-';
                     buf = buf.add(1);
-                    let n = (!(self as $conv)).wrapping_add(1);
-                    $func(n, buf) + 1
+                    n = (!n).wrapping_add(1);
                 }
+
+                $func(n, buf) + (self < 0) as usize
             }
         }
     };
