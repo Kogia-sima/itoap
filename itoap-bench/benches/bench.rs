@@ -7,7 +7,7 @@ macro_rules! benches {
             $name:ident($value:expr)
         ),*
     ) => {
-        mod bench_itoap_write_to_vec {
+        mod bench_itoap_write {
             use bencher::{Bencher, black_box};
             $(
                 $(#[$attr])*
@@ -16,24 +16,21 @@ macro_rules! benches {
 
                     b.iter(|| {
                         buf.clear();
-                        itoap::write_to_vec(&mut buf, black_box($value));
-                        buf.len()
+                        itoap::write_to_vec(&mut buf, black_box($value))
                     });
                 }
             )*
         }
 
-        mod bench_itoap_write {
+        mod bench_itoap_ptr_write {
             use bencher::{Bencher, black_box};
             $(
                 $(#[$attr])*
                 pub fn $name(b: &mut Bencher) {
                     let mut buf = Vec::<u8>::with_capacity(40);
 
-                    b.iter(|| {
-                        buf.clear();
-                        let _ = itoap::write(&mut buf, black_box($value));
-                        buf.len()
+                    b.iter(|| unsafe {
+                        itoap::write_to_ptr(buf.as_mut_ptr(), black_box($value))
                     });
                 }
             )*
@@ -49,7 +46,9 @@ macro_rules! benches {
                     b.iter(|| {
                         buf.clear();
 
-                        let _ = itoa::write(&mut buf, black_box($value));
+                        let mut itoa_buf = itoa::Buffer::new();
+                        let s = itoa_buf.format(black_box($value));
+                        buf.extend_from_slice(s.as_bytes());
                         buf.len()
                     });
                 }
@@ -76,8 +75,8 @@ macro_rules! benches {
         $(
             benchmark_group!(
                 $name,
-                bench_itoap_write_to_vec::$name,
                 bench_itoap_write::$name,
+                bench_itoap_ptr_write::$name,
                 bench_itoa_write::$name,
                 bench_std_fmt::$name,
             );
