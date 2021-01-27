@@ -46,7 +46,7 @@
 //! }
 //! ```
 
-#![allow(clippy::many_single_char_names)]
+#![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![no_std]
 
@@ -222,7 +222,7 @@ pub fn fmt<W: core::fmt::Write, V: Integer>(
     unsafe {
         let mut buf = [MaybeUninit::<u8>::uninit(); 40];
         let l = value.write_to(buf.as_mut_ptr() as *mut u8);
-        let slc = core::mem::transmute::<_, &[u8]>(buf.get_unchecked(..l));
+        let slc = core::slice::from_raw_parts(buf.as_ptr() as *const u8, l);
         writer.write_str(core::str::from_utf8_unchecked(slc))
     }
 }
@@ -247,7 +247,7 @@ pub fn write<W: std::io::Write, V: Integer>(
     unsafe {
         let mut buf = [MaybeUninit::<u8>::uninit(); 40];
         let l = value.write_to(buf.as_mut_ptr() as *mut u8);
-        let slc = core::mem::transmute::<_, &[u8]>(buf.get_unchecked(..l));
+        let slc = core::slice::from_raw_parts(buf.as_ptr() as *const u8, l);
         writer.write(slc)
     }
 }
