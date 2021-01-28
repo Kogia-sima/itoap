@@ -325,7 +325,7 @@ mod tests {
     fn test_u64_random() {
         let mut rng = SmallRng::seed_from_u64(0xb0d39604298743d0);
 
-        for _ in 0..10000 {
+        for _ in 0..1000 {
             let value = rng.gen::<u64>();
             assert_eq!(itoap_fmt(value), std_fmt(value));
         }
