@@ -135,6 +135,7 @@ pub unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
 }
 
 /// Multiply unsigned 128 bit integers, return upper 128 bits of the result
+#[inline]
 fn u128_mulhi(x: u128, y: u128) -> u128 {
     let x_lo = x as u64;
     let x_hi = (x >> 64) as u64;
