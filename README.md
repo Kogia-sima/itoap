@@ -17,7 +17,7 @@ contiguous buffer, then this crate is the best choice.
 
 If you want to write integers to a `std::io::Write` or `std::fmt::Write`, 
 [itoa](https://github.com/dtolnay/itoa) crate and `itoap` crate shows almost same
-performance, but `itoap` outputs slightly larger binary.
+performance for some types, but `itoap` is generally faster.
 
 The implementation is based on the `sse2` algorithm from
 [itoa-benchmark](https://github.com/miloyip/itoa-benchmark) repository.
