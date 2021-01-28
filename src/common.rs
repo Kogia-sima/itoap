@@ -134,82 +134,86 @@ pub unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
     }
 }
 
-// write u128 in decimal format
-//
-// current implementation is based on [6502's method](https://stackoverflow.com/a/8025958),
-// but may changes if faster algorithm will be found.
-unsafe fn write_u128_big(n: u128, mut buf: *mut u8) -> usize {
-    use core::mem::{transmute, transmute_copy};
-    debug_assert!(n > core::u64::MAX as u128);
+/// Multiply unsigned 128 bit integers, return upper 128 bits of the result
+#[inline]
+fn u128_mulhi(x: u128, y: u128) -> u128 {
+    let x_lo = x as u64;
+    let x_hi = (x >> 64) as u64;
+    let y_lo = y as u64;
+    let y_hi = (y >> 64) as u64;
 
-    // expand to per-32-bit elements.
-    // should use `transmute_copy` because results of `to_ne_bytes` may be not aligned.
-    let mut x: [u32; 4] = transmute_copy(&n.to_ne_bytes());
+    // handle possibility of overflow
+    let carry = (x_lo as u128 * y_lo as u128) >> 64;
+    let m = x_lo as u128 * y_hi as u128 + carry;
+    let high1 = m >> 64;
+
+    let m_lo = m as u64;
+    let high2 = x_hi as u128 * y_lo as u128 + m_lo as u128 >> 64;
+
+    x_hi as u128 * y_hi as u128 + high1 + high2
+}
+
+/// Write u128 in decimal format
+/// 
+/// Integer division algorithm is based on the following paper:
+///
+///   T. Granlund and P. Montgomery, “Division by Invariant IntegersUsing Multiplication,”
+///   in Proc. of the SIGPLAN94 Conference onProgramming Language Design and
+///   Implementation, 1994, pp. 61–72
+///
+unsafe fn write_u128_big(mut n: u128, mut buf: *mut u8) -> usize {
+    const DIV_FACTOR: u128 = 76624777043294442917917351357515459181;
+    const DIV_SHIFT: u32 = 51;
+    const POW_10_8: u64 = 100000000;
+    const POW_10_16: u64 = 10000000000000000;
+
+    debug_assert!(n > core::u64::MAX as u128);
 
     // hold per-8-digits results
     // i.e. result[0] holds n % 10^8, result[1] holds (n / 10^8) % 10^8, ...
     let mut result = [0u32; 5];
 
-    for i in 0..2 {
-        #[cfg(target_endian = "little")]
-        const ORDER: [usize; 4] = [3, 2, 1, 0];
-        #[cfg(target_endian = "big")]
-        const ORDER: [usize; 4] = [0, 1, 2, 3];
+    {
+        // performs n /= 10^16
+        let quot = u128_mulhi(n, DIV_FACTOR) >> DIV_SHIFT;
+        let rem = (n - quot * POW_10_16 as u128) as u64;
+        n = quot;
 
-        let mut carry = 0u32;
-        let mut d;
+        debug_assert!(rem < POW_10_16);
 
-        // performs x /= 10^8 and store the remainder to carry
-        {
-            d = ((carry as u64) << 32) | x[ORDER[0]] as u64;
-            x[ORDER[0]] = (d / 100_000_000) as u32;
-            carry = (d % 100_000_000) as u32;
+        result[1] = (rem / POW_10_8) as u32;
+        result[0] = (rem % POW_10_8) as u32;
 
-            d = ((carry as u64) << 32) | x[ORDER[1]] as u64;
-            x[ORDER[1]] = (d / 100_000_000) as u32;
-            carry = (d % 100_000_000) as u32;
-
-            d = ((carry as u64) << 32) | x[ORDER[2]] as u64;
-            x[ORDER[2]] = (d / 100_000_000) as u32;
-            carry = (d % 100_000_000) as u32;
-
-            d = ((carry as u64) << 32) | x[ORDER[3]] as u64;
-            x[ORDER[3]] = (d / 100_000_000) as u32;
-            carry = (d % 100_000_000) as u32;
-        }
-
-        result[i] = carry;
+        debug_assert!(n > 0);
+        debug_assert!(n <= core::u128::MAX / POW_10_16 as u128);
     }
 
-    let x: u128 = transmute(x);
-    debug_assert!(x > 0);
-    debug_assert!(x <= 34_028_236_692_093_846_346_337);
-    let result_len = if x >= 10_000_000_000_000_000 {
-        // performs x /= 10^16
-        let quot = (x >> 16) as u64 / 152_587_890_625;
-        let rem = (x - 10_000_000_000_000_000 * quot as u128) as u64;
+    let result_len = if n >= POW_10_16 as u128 {
+        // performs n /= 10^16
+        let quot = (n >> 16) as u64 / (POW_10_16 >> 16);
+        let rem = (n - POW_10_16 as u128 * quot as u128) as u64;
 
-        debug_assert!(quot <= 3_402_823);
-        debug_assert!(rem < 10_000_000_000_000_000);
+        debug_assert!(quot <= 3402823);
+        debug_assert!(rem < POW_10_16);
 
-        result[2] = (rem % 100_000_000) as u32;
-        result[3] = (rem / 100_000_000) as u32;
+        result[3] = (rem / POW_10_8) as u32;
+        result[2] = (rem % POW_10_8) as u32;
         result[4] = quot as u32;
         4
-    } else if x >= 100_000_000 {
-        result[2] = ((x as u64) % 100_000_000) as u32;
-        result[3] = ((x as u64) / 100_000_000) as u32;
+    } else if (n as u64) >= POW_10_8 {
+        result[3] = ((n as u64) / POW_10_8) as u32;
+        result[2] = ((n as u64) % POW_10_8) as u32;
         3
     } else {
-        result[2] = x as u32;
+        result[2] = n as u32;
         2
     };
 
-    let l = write8(result[result_len], buf);
+    let l = write8(*result.get_unchecked(result_len), buf);
     buf = buf.add(l);
 
     for i in (0..result_len).rev() {
-        write8_pad(result[i], buf);
+        write8_pad(*result.get_unchecked(i), buf);
         buf = buf.add(8);
     }
 
