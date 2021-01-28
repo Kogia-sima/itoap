@@ -177,14 +177,15 @@ unsafe fn write_u128_big(mut n: u128, mut buf: *mut u8) -> usize {
         // performs n /= 10^16
         let quot = u128_mulhi(n, DIV_FACTOR) >> DIV_SHIFT;
         let rem = (n - quot * POW_10_16 as u128) as u64;
-        n = quot;
+        debug_assert_eq!(quot, n / POW_10_16 as u128);
+        debug_assert_eq!(rem as u128, n % POW_10_16 as u128);
 
-        debug_assert!(rem < POW_10_16);
+        n = quot;
 
         result[1] = (rem / POW_10_8) as u32;
         result[0] = (rem % POW_10_8) as u32;
 
-        debug_assert!(n > 0);
+        debug_assert_ne!(n, 0);
         debug_assert!(n <= core::u128::MAX / POW_10_16 as u128);
     }
 
@@ -192,9 +193,9 @@ unsafe fn write_u128_big(mut n: u128, mut buf: *mut u8) -> usize {
         // performs n /= 10^16
         let quot = (n >> 16) as u64 / (POW_10_16 >> 16);
         let rem = (n - POW_10_16 as u128 * quot as u128) as u64;
-
+        debug_assert_eq!(quot as u128, n / POW_10_16 as u128);
+        debug_assert_eq!(rem as u128, n % POW_10_16 as u128);
         debug_assert!(quot <= 3402823);
-        debug_assert!(rem < POW_10_16);
 
         result[3] = (rem / POW_10_8) as u32;
         result[2] = (rem % POW_10_8) as u32;
