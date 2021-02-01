@@ -1,4 +1,7 @@
-use bencher::{benchmark_group, benchmark_main};
+#![feature(test)]
+extern crate test;
+
+use test::{Bencher, black_box};
 
 macro_rules! benches {
     (
@@ -8,57 +11,60 @@ macro_rules! benches {
         ),*
     ) => {
         mod bench_itoap_write {
-            use bencher::{Bencher, black_box};
+            use test::{Bencher, black_box};
             $(
                 $(#[$attr])*
+                #[bench]
                 pub fn $name(b: &mut Bencher) {
                     let mut buf = Vec::with_capacity(40);
 
                     b.iter(|| {
                         buf.clear();
-                        itoap::write_to_vec(&mut buf, black_box($value))
+                        itoap::write_to_vec(&mut buf, black_box($value));
+                        black_box(&mut buf);
                     });
                 }
             )*
         }
 
         mod bench_itoap_ptr_write {
-            use bencher::{Bencher, black_box};
+            use test::{Bencher, black_box};
             $(
                 $(#[$attr])*
+                #[bench]
                 pub fn $name(b: &mut Bencher) {
                     let mut buf = Vec::<u8>::with_capacity(40);
 
                     b.iter(|| unsafe {
-                        itoap::write_to_ptr(buf.as_mut_ptr(), black_box($value))
+                        itoap::write_to_ptr(buf.as_mut_ptr(), black_box($value));
+                        black_box(&mut buf);
                     });
                 }
             )*
         }
 
         mod bench_itoa_write {
-            use bencher::{Bencher, black_box};
+            use test::{Bencher, black_box};
             $(
                 $(#[$attr])*
+                #[bench]
                 pub fn $name(b: &mut Bencher) {
                     let mut buf = Vec::with_capacity(40);
 
                     b.iter(|| {
                         buf.clear();
-
-                        let mut itoa_buf = itoa::Buffer::new();
-                        let s = itoa_buf.format(black_box($value));
-                        buf.extend_from_slice(s.as_bytes());
-                        buf.len()
+                        let _ = itoa::write(&mut buf, black_box($value));
+                        black_box(&mut buf);
                     });
                 }
             )*
         }
 
         mod bench_std_fmt {
-            use bencher::{Bencher, black_box};
+            use test::{Bencher, black_box};
             $(
                 $(#[$attr])*
+                #[bench]
                 pub fn $name(b: &mut Bencher) {
                     use std::io::Write;
 
@@ -66,21 +72,12 @@ macro_rules! benches {
 
                     b.iter(|| {
                         buf.clear();
-                        write!(&mut buf, "{}", black_box($value)).unwrap()
+                        let _ = write!(&mut buf, "{}", black_box($value));
+                        black_box(&mut buf);
                     });
                 }
             )*
         }
-
-        $(
-            benchmark_group!(
-                $name,
-                bench_itoap_write::$name,
-                bench_itoap_ptr_write::$name,
-                bench_itoa_write::$name,
-                bench_std_fmt::$name,
-            );
-        )*
     }
 }
 
@@ -94,12 +91,12 @@ benches! {
     bench_u128_max(<u128>::max_value())
 }
 
-benchmark_main!(
-    bench_u64_0,
-    bench_u64_half,
-    bench_u64_max,
-    bench_i16_0,
-    bench_i16_min,
-    bench_u128_0,
-    bench_u128_max,
-);
+#[bench]
+fn noop(b: &mut Bencher) {
+    let mut buf = Vec::<u8>::with_capacity(40);
+    b.iter(|| {
+        buf.clear();
+        black_box(0i16);
+        black_box(&mut buf);
+    })
+}
