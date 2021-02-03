@@ -1,3 +1,4 @@
+use core::ops::{Div, Mul, Sub};
 use core::ptr;
 
 const DEC_DIGITS_LUT: &[u8] = b"\
@@ -8,13 +9,24 @@ const DEC_DIGITS_LUT: &[u8] = b"\
       8081828384858687888990919293949596979899";
 
 #[inline]
-pub unsafe fn lookup<T: Into<usize>>(idx: T) -> *const u8 {
+pub fn divmod<T: Copy + Sub<Output = T> + Mul<Output = T> + Div<Output = T>>(
+    x: T,
+    y: T,
+) -> (T, T) {
+    // https://bugs.llvm.org/show_bug.cgi?id=23106
+    let quot = x / y;
+    let rem = x - quot * y;
+    (quot, rem)
+}
+
+#[inline]
+pub unsafe fn lookup<T: Into<u64>>(idx: T) -> *const u8 {
     DEC_DIGITS_LUT.as_ptr().add((idx.into() as usize) << 1)
 }
 
 /// write integer smaller than 10000
 #[inline]
-pub unsafe fn write4(n: u16, buf: *mut u8) -> usize {
+pub unsafe fn write4(n: u32, buf: *mut u8) -> usize {
     debug_assert!(n < 10000);
 
     if n < 100 {
@@ -25,31 +37,28 @@ pub unsafe fn write4(n: u16, buf: *mut u8) -> usize {
             ptr::copy_nonoverlapping(lookup(n), buf, 2);
             2
         }
-    } else if n < 1000 {
-        let d1 = (n / 100) as u8;
-        let d2 = n % 100;
-        *buf = d1 + 0x30;
-        ptr::copy_nonoverlapping(lookup(d2), buf.add(1), 2);
-        3
     } else {
-        let d1 = n / 100;
-        let d2 = n % 100;
-        ptr::copy_nonoverlapping(lookup(d1), buf, 2);
-        ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
-        4
+        let (n1, n2) = divmod(n, 100);
+        if n < 1000 {
+            *buf = n1 as u8 + 0x30;
+            ptr::copy_nonoverlapping(lookup(n2), buf.add(1), 2);
+            3
+        } else {
+            ptr::copy_nonoverlapping(lookup(n1), buf.add(0), 2);
+            ptr::copy_nonoverlapping(lookup(n2), buf.add(2), 2);
+            4
+        }
     }
 }
 
 /// write integer smaller than 10000 with 0 padding
 #[inline]
-pub unsafe fn write4_pad(n: u16, buf: *mut u8) {
+pub unsafe fn write4_pad(n: u32, buf: *mut u8) {
     debug_assert!(n < 10000);
+    let (n1, n2) = divmod(n, 100);
 
-    let d1 = n / 100;
-    let d2 = n % 100;
-
-    ptr::copy_nonoverlapping(lookup(d1), buf, 2);
-    ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
+    ptr::copy_nonoverlapping(lookup(n1), buf, 2);
+    ptr::copy_nonoverlapping(lookup(n2), buf.add(2), 2);
 }
 
 #[inline]
@@ -57,13 +66,35 @@ pub unsafe fn write8(n: u32, buf: *mut u8) -> usize {
     debug_assert!(n < 100_000_000);
 
     if n < 10000 {
-        write4(n as u16, buf)
+        write4(n as u32, buf)
     } else {
-        let d1 = (n / 10000) as u16;
-        let d2 = (n % 10000) as u16;
-        let l = write4(d1, buf);
-        write4_pad(d2, buf.add(l));
-        l + 4
+        let (n1, n2) = divmod(n, 10000);
+
+        let l = if n1 < 100 {
+            if n1 < 10 {
+                *buf = n1 as u8 + 0x30;
+                5
+            } else {
+                ptr::copy_nonoverlapping(lookup(n1), buf, 2);
+                6
+            }
+        } else {
+            let (n11, n12) = divmod(n1, 100);
+            if n1 < 1000 {
+                *buf = n11 as u8 + 0x30;
+                ptr::copy_nonoverlapping(lookup(n12), buf.add(1), 2);
+                7
+            } else {
+                ptr::copy_nonoverlapping(lookup(n11), buf.add(0), 2);
+                ptr::copy_nonoverlapping(lookup(n12), buf.add(2), 2);
+                8
+            }
+        };
+
+        let (n21, n22) = divmod(n2, 100);
+        ptr::copy_nonoverlapping(lookup(n21), buf.add(l - 4), 2);
+        ptr::copy_nonoverlapping(lookup(n22), buf.add(l - 2), 2);
+        l
     }
 }
 
@@ -71,18 +102,14 @@ pub unsafe fn write8(n: u32, buf: *mut u8) -> usize {
 pub unsafe fn write8_pad(n: u32, buf: *mut u8) {
     debug_assert!(n < 100_000_000);
 
-    let c1 = (n / 10000) as u32;
-    let c2 = (n % 10000) as u32;
+    let (n1, n2) = divmod(n, 10000);
+    let (n11, n12) = divmod(n1, 100);
+    let (n21, n22) = divmod(n2, 100);
 
-    let d1 = (c1 / 100) as u16;
-    let d2 = (c1 % 100) as u16;
-    let d3 = (c2 / 100) as u16;
-    let d4 = (c2 % 100) as u16;
-
-    ptr::copy_nonoverlapping(lookup(d1), buf, 2);
-    ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
-    ptr::copy_nonoverlapping(lookup(d3), buf.add(4), 2);
-    ptr::copy_nonoverlapping(lookup(d4), buf.add(6), 2);
+    ptr::copy_nonoverlapping(lookup(n11), buf, 2);
+    ptr::copy_nonoverlapping(lookup(n12), buf.add(2), 2);
+    ptr::copy_nonoverlapping(lookup(n21), buf.add(4), 2);
+    ptr::copy_nonoverlapping(lookup(n22), buf.add(6), 2);
 }
 
 pub unsafe fn write_u8(n: u8, buf: *mut u8) -> usize {
@@ -93,10 +120,9 @@ pub unsafe fn write_u8(n: u8, buf: *mut u8) -> usize {
         ptr::copy_nonoverlapping(lookup(n), buf, 2);
         2
     } else {
-        let d1 = n / 100;
-        let d2 = n % 100;
-        *buf = d1 + 0x30;
-        ptr::copy_nonoverlapping(lookup(d2), buf.add(1), 2);
+        let (n1, n2) = divmod(n, 100);
+        *buf = n1 + 0x30;
+        ptr::copy_nonoverlapping(lookup(n2), buf.add(1), 2);
         3
     }
 }
@@ -112,24 +138,23 @@ pub unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
         }
     } else if n < 10000 {
         if n < 1000 {
-            let d1 = (n / 100) as u8;
-            let d2 = n % 100;
-            *buf = d1 + 0x30;
-            ptr::copy_nonoverlapping(lookup(d2), buf.add(1), 2);
+            let (a1, a2) = divmod(n, 100);
+            *buf = a1 as u8 + 0x30;
+            ptr::copy_nonoverlapping(lookup(a2), buf.add(1), 2);
             3
         } else {
-            let d1 = n / 100;
-            let d2 = n % 100;
-            ptr::copy_nonoverlapping(lookup(d1), buf, 2);
-            ptr::copy_nonoverlapping(lookup(d2), buf.add(2), 2);
+            let (a1, a2) = divmod(n, 100);
+            ptr::copy_nonoverlapping(lookup(a1), buf, 2);
+            ptr::copy_nonoverlapping(lookup(a2), buf.add(2), 2);
             4
         }
     } else {
-        let b = (n / 10000) as u8; // 1 to 6
-        let c = n % 10000;
+        let (a1, a2) = divmod(n, 10000);
+        let (b1, b2) = divmod(a2, 100);
 
-        *buf = b + 0x30;
-        write4_pad(c, buf.add(1));
+        *buf = a1 as u8 + 0x30;
+        ptr::copy_nonoverlapping(lookup(b1), buf.add(1), 2);
+        ptr::copy_nonoverlapping(lookup(b2), buf.add(3), 2);
         5
     }
 }
@@ -154,7 +179,7 @@ fn u128_mulhi(x: u128, y: u128) -> u128 {
 }
 
 /// Write u128 in decimal format
-/// 
+///
 /// Integer division algorithm is based on the following paper:
 ///
 ///   T. Granlund and P. Montgomery, “Division by Invariant IntegersUsing Multiplication,”

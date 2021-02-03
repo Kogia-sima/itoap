@@ -5,7 +5,7 @@ use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
 
-use crate::common::{lookup, write4, write4_pad};
+use crate::common::{divmod, lookup, write4, write4_pad};
 use core::ptr;
 
 #[repr(align(16))]
@@ -76,29 +76,27 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
     _mm_sub_epi16(v4, v6)
 }
 
-pub unsafe fn write_u32(mut n: u32, buf: *mut u8) -> usize {
+pub unsafe fn write_u32(n: u32, buf: *mut u8) -> usize {
     if n < 10000 {
-        write4(n as u16, buf)
+        write4(n, buf)
     } else if n < 100_000_000 {
-        let b = n / 10000;
-        let c = n % 10000;
+        let (n1, n2) = divmod(n, 10000);
 
-        let l = write4(b as u16, buf);
-        write4_pad(c as u16, buf.add(l));
+        let l = write4(n1, buf);
+        write4_pad(n2, buf.add(l));
         l + 4
     } else {
-        let a = n / 100_000_000; // 1 to 42
-        n %= 100_000_000;
+        let (n1, n2) = divmod(n, 100_000_000);
 
-        let l = if a >= 10 {
-            ptr::copy_nonoverlapping(lookup(a as usize), buf, 2);
+        let l = if n1 >= 10 {
+            ptr::copy_nonoverlapping(lookup(n1), buf, 2);
             2
         } else {
-            *buf = a as u8 + 0x30;
+            *buf = n1 as u8 + 0x30;
             1
         };
 
-        let b = convert_8digits_sse2(n);
+        let b = convert_8digits_sse2(n2);
         let ba = _mm_add_epi8(
             _mm_packus_epi16(_mm_setzero_si128(), b),
             _mm_set1_epi8(b'0' as i8),
@@ -110,32 +108,29 @@ pub unsafe fn write_u32(mut n: u32, buf: *mut u8) -> usize {
     }
 }
 
-pub unsafe fn write_u64(mut n: u64, buf: *mut u8) -> usize {
+pub unsafe fn write_u64(n: u64, buf: *mut u8) -> usize {
     if n < 10000 {
-        write4(n as u16, buf)
+        write4(n as u32, buf)
     } else if n < 100_000_000 {
-        let n = n as u32;
-        let b = n / 10000;
-        let c = n % 10000;
+        let (n1, n2) = divmod(n as u32, 10000);
 
-        let l = write4(b as u16, buf);
-        write4_pad(c as u16, buf.add(l));
+        let l = write4(n1, buf);
+        write4_pad(n2, buf.add(l));
         l + 4
     } else if n < 10_000_000_000_000_000 {
-        let v0 = n / 100_000_000;
-        let v1 = (n % 100_000_000) as u32;
+        let (n1, n2) = divmod(n, 100_000_000);
+        let (n1, n2) = (n1 as u32, n2 as u32);
 
-        let l = if v0 < 10000 {
-            write4(v0 as u16, buf)
+        let l = if n1 < 10000 {
+            write4(n1, buf)
         } else {
-            let b0 = v0 / 10000;
-            let c0 = v0 % 10000;
-            let l = write4(b0 as u16, buf);
-            write4_pad(c0 as u16, buf.add(l));
+            let (n11, n12) = divmod(n1, 10000);
+            let l = write4(n11, buf);
+            write4_pad(n12, buf.add(l));
             l + 4
         };
 
-        let b = convert_8digits_sse2(v1);
+        let b = convert_8digits_sse2(n2);
         let ba = _mm_add_epi8(
             _mm_packus_epi16(_mm_setzero_si128(), b),
             _mm_set1_epi8(b'0' as i8),
@@ -145,16 +140,13 @@ pub unsafe fn write_u64(mut n: u64, buf: *mut u8) -> usize {
 
         l + 8
     } else {
-        let a = n / 10_000_000_000_000_000; // 1 to 1844
-        n %= 10_000_000_000_000_000;
+        let (n1, n2) = divmod(n, 10_000_000_000_000_000);
+        let l = write4(n1 as u32, buf);
 
-        let v0 = (n / 100_000_000) as u32;
-        let v1 = (n % 100_000_000) as u32;
+        let (n21, n22) = divmod(n2, 100_000_000);
 
-        let l = write4(a as u16, buf);
-
-        let a0 = convert_8digits_sse2(v0);
-        let a1 = convert_8digits_sse2(v1);
+        let a0 = convert_8digits_sse2(n21 as u32);
+        let a1 = convert_8digits_sse2(n22 as u32);
 
         // Convert to bytes, add '0'
         let va = _mm_add_epi8(_mm_packus_epi16(a0, a1), _mm_set1_epi8(b'0' as i8));
