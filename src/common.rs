@@ -13,7 +13,7 @@ pub fn divmod<T: Copy + Sub<Output = T> + Mul<Output = T> + Div<Output = T>>(
     x: T,
     y: T,
 ) -> (T, T) {
-    // https://bugs.llvm.org/show_bug.cgi?id=23106
+    // https://bugs.llvm.org/show_bug.cgi?id=38217
     let quot = x / y;
     let rem = x - quot * y;
     (quot, rem)
