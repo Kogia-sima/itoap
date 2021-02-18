@@ -10,7 +10,7 @@ macro_rules! benches {
             $name:ident($value:expr)
         ),*
     ) => {
-        mod bench_itoap_write {
+        mod bench_itoap_write_to_vec {
             use test::{Bencher, black_box};
             $(
                 $(#[$attr])*
@@ -27,7 +27,7 @@ macro_rules! benches {
             )*
         }
 
-        mod bench_itoap_ptr_write {
+        mod bench_itoap_write_to_ptr {
             use test::{Bencher, black_box};
             $(
                 $(#[$attr])*
