@@ -35,7 +35,7 @@ Benchmark program was executed under the following environment:
 |CPU model name|Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz|
 |CPU micro architecture|Sky Lake|
 |Standard libc implementation|glibc 2.31.0|
-|rustc|1.51.0-nightly (368275062 2021-02-02)|
+|rustc|rustc 1.53.0-nightly (07e0e2ec2 2021-03-24)|
 
 ![Benchmark result](./bench.png)
 
