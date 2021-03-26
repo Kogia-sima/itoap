@@ -17,9 +17,12 @@ simd = []
 std = ["alloc"]
 
 [dev-dependencies]
-itoa = { version = "0.4.6", features = ["i128"], default-features = false }
+itoa = { version = "0.4.6", features = ["i128"] }
 rand = { version = "0.8.2", features = ["small_rng"], default-features = false }
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[profile.bench]
+codegen-units = 1
