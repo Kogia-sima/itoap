@@ -137,13 +137,12 @@ pub unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
             2
         }
     } else if n < 10000 {
+        let (a1, a2) = divmod(n, 100);
         if n < 1000 {
-            let (a1, a2) = divmod(n, 100);
             *buf = a1 as u8 + 0x30;
             ptr::copy_nonoverlapping(lookup(a2), buf.add(1), 2);
             3
         } else {
-            let (a1, a2) = divmod(n, 100);
             ptr::copy_nonoverlapping(lookup(a1), buf, 2);
             ptr::copy_nonoverlapping(lookup(a2), buf.add(2), 2);
             4
