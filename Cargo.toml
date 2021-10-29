@@ -9,6 +9,7 @@ readme = "README.md"
 categories = ["value-formatting"]
 license = "MIT"
 edition = "2018"
+exclude = ["benches/*", "bench.png", ".github/*"]
 
 [features]
 default = ["simd", "std"]
