@@ -137,13 +137,13 @@ pub unsafe fn write_u16(n: u16, buf: *mut u8) -> usize {
             2
         }
     } else if n < 10000 {
+        let (a1, a2) = divmod(n, 100);
+
         if n < 1000 {
-            let (a1, a2) = divmod(n, 100);
             *buf = a1 as u8 + 0x30;
             ptr::copy_nonoverlapping(lookup(a2), buf.add(1), 2);
             3
         } else {
-            let (a1, a2) = divmod(n, 100);
             ptr::copy_nonoverlapping(lookup(a1), buf, 2);
             ptr::copy_nonoverlapping(lookup(a2), buf.add(2), 2);
             4
@@ -173,7 +173,7 @@ fn u128_mulhi(x: u128, y: u128) -> u128 {
     let high1 = m >> 64;
 
     let m_lo = m as u64;
-    let high2 = x_hi as u128 * y_lo as u128 + m_lo as u128 >> 64;
+    let high2 = (x_hi as u128 * y_lo as u128 + m_lo as u128) >> 64;
 
     x_hi as u128 * y_hi as u128 + high1 + high2
 }
