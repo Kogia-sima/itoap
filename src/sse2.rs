@@ -40,9 +40,8 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
 
     // abcd, efgh = abcdefgh divmod 10000
     let abcdefgh = _mm_cvtsi32_si128(value as i32);
-    let abcd = _mm_srli_epi64(
+    let abcd = _mm_srli_epi64::<45>(
         _mm_mul_epu32(abcdefgh, _mm_set1_epi32(kDiv10000 as i32)),
-        45,
     );
     let efgh = _mm_sub_epi32(abcdefgh, _mm_mul_epu32(abcd, _mm_set1_epi32(10000)));
 
@@ -50,7 +49,7 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
     let v1 = _mm_unpacklo_epi16(abcd, efgh);
 
     // v1a = v1 * 4 = [ abcd*4, efgh*4, 0, 0, 0, 0, 0, 0 ]
-    let v1a = _mm_slli_epi64(v1, 2);
+    let v1a = _mm_slli_epi64::<2>(v1);
 
     // v2 = [abcd*4, abcd*4, abcd*4, abcd*4, efgh*4, efgh*4, efgh*4, efgh*4]
     let v2a = _mm_unpacklo_epi16(v1a, v1a);
@@ -70,7 +69,7 @@ unsafe fn convert_8digits_sse2(value: u32) -> __m128i {
     let v5 = _mm_mullo_epi16(v4, _mm_set1_epi16(10));
 
     // v6 = v5 << 16 = [ 0, a0, ab0, abc0, 0, e0, ef0, efg0 ]
-    let v6 = _mm_slli_epi64(v5, 16);
+    let v6 = _mm_slli_epi64::<16>(v5);
 
     // v4 - v6 = { a, b, c, d, e, f, g, h }
     _mm_sub_epi16(v4, v6)
@@ -101,7 +100,7 @@ pub unsafe fn write_u32(n: u32, buf: *mut u8) -> usize {
             _mm_packus_epi16(_mm_setzero_si128(), b),
             _mm_set1_epi8(b'0' as i8),
         );
-        let result = _mm_srli_si128(ba, 8);
+        let result = _mm_srli_si128::<8>(ba);
         _mm_storel_epi64(buf.add(l) as *mut __m128i, result);
 
         l + 8
@@ -135,7 +134,7 @@ pub unsafe fn write_u64(n: u64, buf: *mut u8) -> usize {
             _mm_packus_epi16(_mm_setzero_si128(), b),
             _mm_set1_epi8(b'0' as i8),
         );
-        let result = _mm_srli_si128(ba, 8);
+        let result = _mm_srli_si128::<8>(ba);
         _mm_storel_epi64(buf.add(l) as *mut __m128i, result);
 
         l + 8
