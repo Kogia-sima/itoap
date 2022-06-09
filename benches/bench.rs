@@ -43,7 +43,7 @@ macro_rules! benches {
             )*
         }
 
-        mod bench_itoa_write {
+        mod bench_itoap_write {
             use test::{Bencher, black_box};
             $(
                 $(#[$attr])*
@@ -53,7 +53,27 @@ macro_rules! benches {
 
                     b.iter(|| {
                         buf.clear();
-                        let _ = itoa::write(&mut buf, black_box($value));
+                        itoap::write(&mut buf, black_box($value));
+                        black_box(&mut buf);
+                    });
+                }
+            )*
+        }
+
+        mod bench_itoa_write {
+            use test::{Bencher, black_box};
+            $(
+                $(#[$attr])*
+                #[bench]
+                pub fn $name(b: &mut Bencher) {
+                    let mut buf = Vec::with_capacity(40);
+
+                    b.iter(|| {
+                        let mut buffer = itoa::Buffer::new();
+                        let printed = buffer.format(black_box($value));
+
+                        buf.clear();
+                        buf.extend_from_slice(printed.as_bytes());
                         black_box(&mut buf);
                     });
                 }

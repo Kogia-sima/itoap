@@ -46,7 +46,6 @@
 //! }
 //! ```
 
-#![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![no_std]
 
