@@ -7,23 +7,25 @@
 [![Rust 1.36](https://img.shields.io/badge/rust-1.36+-lightgray.svg)](https://blog.rust-lang.org/2019/07/04/Rust-1.36.0.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Kogia-sima/itoap/blob/master/LICENSE)
 
-This crate provides even faster functions for printing integers with default format
-than [itoa](https://crates.io/crates/itoa) crate.
+This crate offers even more rapid functions for formatting integers into
+decimal format compared to the [itoa](https://crates.io/crates/itoa) crate.
 
 ## Comparison with `itoa` crate
 
-If you want to write integers in decimal format to `String`, `Vec` or any other
-contiguous buffer, then this crate is the best choice.
+If you desire to convert intergers into a decimal format and store them in a
+`String`, `Vec` or any other contiguous buffer, then this crate will be the
+best choice.
 
-If you want to write integers to a `std::io::Write` or `std::fmt::Write`, 
-[itoa](https://github.com/dtolnay/itoa) crate and `itoap` crate shows almost same
-performance for some types, but `itoap` is generally faster.
+For writing integers to a `std::io::Write` or `std::fmt::Write`, both the
+[itoa](https://github.com/dtolnay/itoa) crate and the `itoap` crate shows
+nearly identical performance for certain types, although `itoap` is generally
+faster.
 
-The implementation is based on the `sse2` algorithm from
+The underlying implementation is based on the `sse2` algorithm from the
 [itoa-benchmark](https://github.com/miloyip/itoa-benchmark) repository.
-While `itoa` crate writes integers from **last** digits, this algorithm writes
-from **first** digits. It allows integers to be written directly to the buffer.
-That's why `itoap` is faster than `itoa`.
+While the `itoa` crate processes integers from the **last** digits, this
+algorithm operates from **first** digits, enabling direct writing of integers
+to the buffer. Consequently, `itoap` outperforms `itoa` due to the efficiency.
 
 ## Benchmark result
 
